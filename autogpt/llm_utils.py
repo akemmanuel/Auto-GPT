@@ -2,15 +2,15 @@ from ast import List
 import time
 from typing import Dict, Optional
 
-import openai
-from openai.error import APIError, RateLimitError
+import requests
+
 from colorama import Fore
 
 from autogpt.config import Config
+from transformers import AutoTokenizer, AutoModel
+import torch
 
 CFG = Config()
-
-openai.api_key = CFG.openai_api_key
 
 
 def call_ai_function(
@@ -56,7 +56,7 @@ def create_chat_completion(
     temperature: float = CFG.temperature,
     max_tokens: Optional[int] = None,
 ) -> str:
-    """Create a chat completion using the OpenAI API
+    """Create a chat completion using the LLM API
 
     Args:
         messages (List[Dict[str, str]]): The messages to send to the chat completion
@@ -78,76 +78,50 @@ def create_chat_completion(
     for attempt in range(num_retries):
         backoff = 2 ** (attempt + 2)
         try:
-            if CFG.use_azure:
-                response = openai.ChatCompletion.create(
-                    deployment_id=CFG.get_azure_deployment_id_for_model(model),
-                    model=model,
-                    messages=messages,
-                    temperature=temperature,
-                    max_tokens=max_tokens,
-                )
-            else:
-                response = openai.ChatCompletion.create(
-                    model=model,
-                    messages=messages,
-                    temperature=temperature,
-                    max_tokens=max_tokens,
-                )
+            model = "Meta-Llama-3.3-70B-Instruct"
+            url = "https://api.sambanova.ai/v1/chat/completions"
+            headers = {
+                "Authorization": f"Bearer {CFG.sambanova_api_key}",
+                "Content-Type": "application/json"
+            }
+            data = {"stream": False, "model": model, "messages": messages}
+            response = requests.post(url, headers=headers, json=data)
             break
-        except RateLimitError:
+        except Exception as e:
             if CFG.debug_mode:
                 print(
                     Fore.RED + "Error: ",
-                    f"Reached rate limit, passing..." + Fore.RESET,
+                    str(e) + Fore.RESET,
                 )
-        except APIError as e:
-            if e.http_status == 502:
-                pass
-            else:
-                raise
-            if attempt == num_retries - 1:
-                raise
-        if CFG.debug_mode:
-            print(
-                Fore.RED + "Error: ",
-                f"API Bad gateway. Waiting {backoff} seconds..." + Fore.RESET,
-            )
+
         time.sleep(backoff)
     if response is None:
         raise RuntimeError(f"Failed to get response after {num_retries} retries")
 
-    return response.choices[0].message["content"]
+    return response.json()["choices"][0]["message"]["content"]
 
 
-def create_embedding_with_ada(text) -> list:
-    """Create a embedding with text-ada-002 using the OpenAI SDK"""
-    num_retries = 10
+    
+def create_embedding_with_hf(text, num_retries=10, debug_mode=True):
+    tokenizer = AutoTokenizer.from_pretrained("sentence-transformers/all-MiniLM-L6-v2")
+    model = AutoModel.from_pretrained("sentence-transformers/all-MiniLM-L6-v2")
+
     for attempt in range(num_retries):
         backoff = 2 ** (attempt + 2)
         try:
-            if CFG.use_azure:
-                return openai.Embedding.create(
-                    input=[text],
-                    engine=CFG.get_azure_deployment_id_for_model(
-                        "text-embedding-ada-002"
-                    ),
-                )["data"][0]["embedding"]
-            else:
-                return openai.Embedding.create(
-                    input=[text], model="text-embedding-ada-002"
-                )["data"][0]["embedding"]
-        except RateLimitError:
-            pass
-        except APIError as e:
-            if e.http_status == 502:
-                pass
-            else:
-                raise
+            # Tokenisierung und Verarbeitung
+            inputs = tokenizer(text, return_tensors="pt", padding=True, truncation=True)
+            with torch.no_grad():
+                outputs = model(**inputs)
+            
+            # Mittelwert über die Hidden States für das Satzembedding
+            embedding = outputs.last_hidden_state.mean(dim=1).squeeze().numpy()
+            return embedding
+        
+        except Exception as e:
+            # Fehler behandeln und ggf. erneut versuchen
+            if debug_mode:
+                print(f"Error on attempt {attempt + 1}: {e}")
             if attempt == num_retries - 1:
                 raise
-        if CFG.debug_mode:
-            print(
-                Fore.RED + "Error: ",
-                f"API Bad gateway. Waiting {backoff} seconds..." + Fore.RESET,
-            )
-        time.sleep(backoff)
+            time.sleep(backoff)

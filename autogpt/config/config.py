@@ -4,7 +4,6 @@ from colorama import Fore
 
 from autogpt.config.singleton import Singleton
 
-import openai
 import yaml
 
 from dotenv import load_dotenv
@@ -34,18 +33,7 @@ class Config(metaclass=Singleton):
         self.browse_chunk_max_length = int(os.getenv("BROWSE_CHUNK_MAX_LENGTH", 8192))
         self.browse_summary_max_token = int(os.getenv("BROWSE_SUMMARY_MAX_TOKEN", 300))
 
-        self.openai_api_key = os.getenv("OPENAI_API_KEY")
-        self.temperature = float(os.getenv("TEMPERATURE", "1"))
-        self.use_azure = os.getenv("USE_AZURE") == "True"
-        self.execute_local_commands = (
-            os.getenv("EXECUTE_LOCAL_COMMANDS", "False") == "True"
-        )
 
-        if self.use_azure:
-            self.load_azure_config()
-            openai.api_type = self.openai_api_type
-            openai.api_base = self.openai_api_base
-            openai.api_version = self.openai_api_version
 
         self.elevenlabs_api_key = os.getenv("ELEVENLABS_API_KEY")
         self.elevenlabs_voice_1_id = os.getenv("ELEVENLABS_VOICE_1_ID")
@@ -75,7 +63,7 @@ class Config(metaclass=Singleton):
         self.huggingface_audio_to_text_model = os.getenv(
             "HUGGINGFACE_AUDIO_TO_TEXT_MODEL"
         )
-
+        self.sambanova_api_key = os.getenv("SAMBA_API_KEY")
         # User agent headers to use when browsing web
         # Some websites might just completely deny request with an error code if
         # no user agent was found.
@@ -92,58 +80,6 @@ class Config(metaclass=Singleton):
         # Note that indexes must be created on db 0 in redis, this is not configurable.
 
         self.memory_backend = os.getenv("MEMORY_BACKEND", "local")
-        # Initialize the OpenAI API client
-        openai.api_key = self.openai_api_key
-
-    def get_azure_deployment_id_for_model(self, model: str) -> str:
-        """
-        Returns the relevant deployment id for the model specified.
-
-        Parameters:
-            model(str): The model to map to the deployment id.
-
-        Returns:
-            The matching deployment id if found, otherwise an empty string.
-        """
-        if model == self.fast_llm_model:
-            return self.azure_model_to_deployment_id_map[
-                "fast_llm_model_deployment_id"
-            ]  # type: ignore
-        elif model == self.smart_llm_model:
-            return self.azure_model_to_deployment_id_map[
-                "smart_llm_model_deployment_id"
-            ]  # type: ignore
-        elif model == "text-embedding-ada-002":
-            return self.azure_model_to_deployment_id_map[
-                "embedding_model_deployment_id"
-            ]  # type: ignore
-        else:
-            return ""
-
-    AZURE_CONFIG_FILE = os.path.join(os.path.dirname(__file__), "..", "azure.yaml")
-
-    def load_azure_config(self, config_file: str = AZURE_CONFIG_FILE) -> None:
-        """
-        Loads the configuration parameters for Azure hosting from the specified file
-          path as a yaml file.
-
-        Parameters:
-            config_file(str): The path to the config yaml file. DEFAULT: "../azure.yaml"
-
-        Returns:
-            None
-        """
-        try:
-            with open(config_file) as file:
-                config_params = yaml.load(file, Loader=yaml.FullLoader)
-        except FileNotFoundError:
-            config_params = {}
-        self.openai_api_type = config_params.get("azure_api_type") or "azure"
-        self.openai_api_base = config_params.get("azure_api_base") or ""
-        self.openai_api_version = (
-            config_params.get("azure_api_version") or "2023-03-15-preview"
-        )
-        self.azure_model_to_deployment_id_map = config_params.get("azure_model_map", [])
 
     def set_continuous_mode(self, value: bool) -> None:
         """Set the continuous mode value."""
@@ -181,9 +117,9 @@ class Config(metaclass=Singleton):
         """Set the browse_website command summary max token value."""
         self.browse_summary_max_token = value
 
-    def set_openai_api_key(self, value: str) -> None:
-        """Set the OpenAI API key value."""
-        self.openai_api_key = value
+    def set_sambanova_api_key(self, value: str) -> None:
+        """Set the Sambanova API key value."""
+        self.sambanova_api_key = value
 
     def set_elevenlabs_api_key(self, value: str) -> None:
         """Set the ElevenLabs API key value."""
@@ -218,13 +154,13 @@ class Config(metaclass=Singleton):
         self.debug_mode = value
 
 
-def check_openai_api_key() -> None:
-    """Check if the OpenAI API key is set in config.py or as an environment variable."""
+def check_sambanova_api_key() -> None:
+    """Check if the Sambanova API key is set in config.py or as an environment variable."""
     cfg = Config()
-    if not cfg.openai_api_key:
+    if not cfg.sambanova_api_key:
         print(
             Fore.RED
-            + "Please set your OpenAI API key in .env or as an environment variable."
+            + "Please set your Sambanova API key in .env or as an environment variable."
         )
-        print("You can get your key from https://beta.openai.com/account/api-keys")
+        print("You can get your key from the offical page")
         exit(1)

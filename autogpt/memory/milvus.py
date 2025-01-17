@@ -23,7 +23,7 @@ class MilvusMemory(MemoryProviderSingleton):
         connections.connect(address=cfg.milvus_addr)
         fields = [
             FieldSchema(name="pk", dtype=DataType.INT64, is_primary=True, auto_id=True),
-            FieldSchema(name="embeddings", dtype=DataType.FLOAT_VECTOR, dim=1536),
+            FieldSchema(name="embeddings", dtype=DataType.FLOAT_VECTOR, dim=384),
             FieldSchema(name="raw_text", dtype=DataType.VARCHAR, max_length=65535),
         ]
 

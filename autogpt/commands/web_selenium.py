@@ -12,6 +12,8 @@ from webdriver_manager.firefox import GeckoDriverManager
 from selenium.webdriver.chrome.options import Options as ChromeOptions
 from selenium.webdriver.firefox.options import Options as FirefoxOptions
 from selenium.webdriver.safari.options import Options as SafariOptions
+from selenium.webdriver.chrome.service import Service
+
 import logging
 from pathlib import Path
 from autogpt.config import Config
@@ -64,18 +66,21 @@ def scrape_text_with_selenium(url: str) -> Tuple[WebDriver, str]:
     options.add_argument(
         "user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.5615.49 Safari/537.36"
     )
-
     if CFG.selenium_web_browser == "firefox":
+        service = Service(executable_path=GeckoDriverManager().install())
+
         driver = webdriver.Firefox(
-            executable_path=GeckoDriverManager().install(), options=options
+            service=service, options=options
         )
     elif CFG.selenium_web_browser == "safari":
         # Requires a bit more setup on the users end
         # See https://developer.apple.com/documentation/webkit/testing_with_webdriver_in_safari
         driver = webdriver.Safari(options=options)
     else:
+        service = Service(executable_path=ChromeDriverManager().install())
+
         driver = webdriver.Chrome(
-            executable_path=ChromeDriverManager().install(), options=options
+            service=service, options=options
         )
     driver.get(url)
 

@@ -4,7 +4,6 @@ import os.path
 import uuid
 from base64 import b64decode
 
-import openai
 import requests
 from PIL import Image
 from pathlib import Path
@@ -27,8 +26,8 @@ def generate_image(prompt: str) -> str:
     filename = f"{str(uuid.uuid4())}.jpg"
 
     # DALL-E
-    if CFG.image_provider == "dalle":
-        return generate_image_with_dalle(prompt, filename)
+    if CFG.image_provider == "pollinations":
+        return generate_image_with_pollinations(prompt, filename)
     elif CFG.image_provider == "sd":
         return generate_image_with_hf(prompt, filename)
     else:
@@ -70,30 +69,12 @@ def generate_image_with_hf(prompt: str, filename: str) -> str:
     return f"Saved to disk:{filename}"
 
 
-def generate_image_with_dalle(prompt: str, filename: str) -> str:
-    """Generate an image with DALL-E.
 
-    Args:
-        prompt (str): The prompt to use
-        filename (str): The filename to save the image to
-
-    Returns:
-        str: The filename of the image
-    """
-    openai.api_key = CFG.openai_api_key
-
-    response = openai.Image.create(
-        prompt=prompt,
-        n=1,
-        size="256x256",
-        response_format="b64_json",
-    )
-
-    print(f"Image Generated for prompt:{prompt}")
-
-    image_data = b64decode(response["data"][0]["b64_json"])
-
-    with open(f"{WORKING_DIRECTORY}/{filename}", mode="wb") as png:
-        png.write(image_data)
+def generate_image_with_pollinations(prompt: str, filename: str) -> str:
+    url = f"https://image.pollinations.ai/prompt/{prompt}?width={1000}&height={1000}&model=flux&seed=234&nologo=true&private=true"
+    response = requests.get(url)
+    print(response.text)
+    with open(f"{WORKING_DIRECTORY}/{filename}", 'wb') as png:
+        png.write(response.content)
 
     return f"Saved to disk:{filename}"

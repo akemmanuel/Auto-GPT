@@ -6,9 +6,9 @@ import numpy as np
 import orjson
 
 from autogpt.memory.base import MemoryProviderSingleton
-from autogpt.llm_utils import create_embedding_with_ada
+from autogpt.llm_utils import create_embedding_with_hf
 
-EMBED_DIM = 1536
+EMBED_DIM = 384
 SAVE_OPTIONS = orjson.OPT_SERIALIZE_NUMPY | orjson.OPT_SERIALIZE_DATACLASS
 
 
@@ -71,7 +71,7 @@ class LocalCache(MemoryProviderSingleton):
             return ""
         self.data.texts.append(text)
 
-        embedding = create_embedding_with_ada(text)
+        embedding = create_embedding_with_hf(text)
 
         vector = np.array(embedding).astype(np.float32)
         vector = vector[np.newaxis, :]
@@ -119,7 +119,7 @@ class LocalCache(MemoryProviderSingleton):
 
         Returns: List[str]
         """
-        embedding = create_embedding_with_ada(text)
+        embedding = create_embedding_with_hf(text)
 
         scores = np.dot(self.data.embeddings, embedding)
 

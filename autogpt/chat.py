@@ -1,6 +1,5 @@
 import time
 
-from openai.error import RateLimitError
 
 from autogpt import token_counter
 from autogpt.config import Config
@@ -53,12 +52,12 @@ def generate_context(prompt, relevant_memory, full_message_history, model):
 def chat_with_ai(
     prompt, user_input, full_message_history, permanent_memory, token_limit
 ):
-    """Interact with the OpenAI API, sending the prompt, user input, message history,
+    """Interact with the LLM API, sending the prompt, user input, message history,
     and permanent memory."""
     while True:
         try:
             """
-            Interact with the OpenAI API, sending the prompt, user input,
+            Interact with the LLM API, sending the prompt, user input,
                 message history, and permanent memory.
 
             Args:
@@ -169,7 +168,7 @@ def chat_with_ai(
             )
 
             return assistant_reply
-        except RateLimitError:
+        except:
             # TODO: When we switch to langchain, this is built in
             print("Error: ", "API Rate Limit Reached. Waiting 10 seconds...")
             time.sleep(10)

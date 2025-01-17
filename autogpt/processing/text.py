@@ -42,7 +42,7 @@ def split_text(text: str, max_length: int = 8192) -> Generator[str, None, None]:
 def summarize_text(
     url: str, text: str, question: str, driver: Optional[WebDriver] = None
 ) -> str:
-    """Summarize text using the OpenAI API
+    """Summarize text using the LLM API
 
     Args:
         url (str): The url of the text

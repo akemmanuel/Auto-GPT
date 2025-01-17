@@ -278,7 +278,7 @@ def print_assistant_thoughts(ai_name, assistant_reply):
         logger.error("Error: Invalid JSON\n", assistant_reply)
         if CFG.speak_mode:
             say_text(
-                "I have received an invalid JSON response from the OpenAI API."
+                "I have received an invalid JSON response from the LLM API."
                 " I cannot ignore this response."
             )
 

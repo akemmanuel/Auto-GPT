@@ -3,7 +3,7 @@ from autogpt.app import start_agent, list_agents, execute_command
 import unittest
 from unittest.mock import patch, MagicMock
 
-
+#TODO: Fix or remove
 class TestCommands(unittest.TestCase):
     def test_make_agent(self):
         with patch("openai.ChatCompletion.create") as mock:

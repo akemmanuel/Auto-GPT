@@ -8,7 +8,6 @@ package-lock.json
 auto_gpt_workspace/*
 *.mpeg
 .env
-azure.yaml
 *venv/*
 outputs/*
 ai_settings.yaml

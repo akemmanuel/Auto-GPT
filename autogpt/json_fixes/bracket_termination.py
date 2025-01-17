@@ -15,7 +15,7 @@ CFG = Config()
 def attempt_to_fix_json_by_finding_outermost_brackets(json_string: str):
     if CFG.speak_mode and CFG.debug_mode:
         say_text(
-            "I have received an invalid JSON response from the OpenAI API. "
+            "I have received an invalid JSON response from the LLM API. "
             "Trying to fix it now."
         )
     logger.typewriter_log("Attempting to fix JSON by finding outermost brackets\n")
